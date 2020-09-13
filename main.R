@@ -1,6 +1,6 @@
 ## still needs EB option
 ## could include nonlinear adjustment option
-
+#trychnage
 ComGamHarm <- function(feature.data, 
                        covar.data, 
                        training.indicies = NULL,
