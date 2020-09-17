@@ -6,7 +6,7 @@ library(matrixStats)
 library(stringi)
 library(reshape2)
 library(forcats)
-library(plotly)
+library(MASS)
 ################################################################################################    #####################################################################################################
 FindIndices <- function(data, trainvar, trainlevel) {
   #
@@ -340,40 +340,109 @@ ApplyGammaDelta <- function(stan.dict, site.params, data.dict) {
 
 ################################################################################################    #####################################################################################################
 
-
-
-
-ApplyHarm <- function(longdata, gamma, delta) {
-  dat     <- longdata
-  numrows <- nrow(longdata)
-  modmat  <- model.matrix(~ -1 + STUDY, longdata)
-  cols    <- colnames(modmat)
-  biovals <- as.matrix(longdata[,c("ABETA", "PTAU", "TAU")])
-  biosum <- t(modmat) %*% as.matrix(biovals)
-  batchtotal <- rowSums(t(modmat))
-  batch.mean <- biosum / batchtotal
-  var.mat <- matrix(ncol = 3)
-  for (i in 1:length(cols)) {
-    ab <- var(longdata[which(modmat[,cols[i]] == 1),]["ABETA"])
-    pt <- var(longdata[which(modmat[,cols[i]] == 1),]["PTAU"])
-    t <- var(longdata[which(modmat[,cols[i]] == 1),]["TAU"])
-    var.mat <- rbind(var.mat, c(ab, pt, t))
+NLAdjustment  <- function(covar.data, stan.dict, ref.cohort, k.val.nlt) {
+  t.stan            <- as.data.frame(t(stan.dict[["std.data"]]))
+  t.std.mean        <- as.data.frame(t(stan.dict[["stand.mean"]]))
+  t.std.var         <- as.data.frame(t(stan.dict[["var.pooled"]]))
+  feats             <- colnames(t.stan)
+  batch.var         <- factor(covar.data[["STUDY"]], levels = unique(covar.data[["STUDY"]]))
+  t.std.mean$batch.var   <- batch.var
+  t.std.var$batch.var    <- batch.var
+  t.stan[["batch.var"]]  <- batch.var
+  split.batch       <- split(t.stan, t.stan[["batch.var"]])
+  batch.names       <- names(split.batch)
+  batch.names       <- batch.names[!batch.names %in% ref.cohort]
+  pair.list         <- list()
+  ref.df            <- split.batch[[ref.cohort]]
+  len.ref           <- nrow(ref.df)
+  for(i in 1:length(batch.names)) {
+    element.name <- batch.names[i]
+    batch.df.red <- split.batch[[batch.names[i]]]
+    ref.df.red   <- ref.df
+    if(nrow(batch.df.red) >= len.ref) {
+      batch.df.red <- batch.df.red[1:len.ref, ]
+    } else {
+      ref.df.red   <- ref.df.red[1:nrow(batch.df.red),]  
+    }
+     batch.df.red[["batch.var"]] <- NULL
+     ref.df.red[["batch.var"]]   <- NULL
+     colnames(batch.df.red) <- paste(colnames(batch.df.red), batch.names[i], sep="_")
+     colnames(ref.df.red)   <- paste(colnames(ref.df.red), ref.cohort, sep="_")
+     full.map.df            <- cbind(ref.df.red, batch.df.red)
+     pair.list[[element.name]] <- full.map.df
+     
   }
-  var.mat <- as.data.frame(var.mat)
-  var.mat <- sqrt(var.mat[2:nrow(var.mat),])
-  rownames(var.mat) <- 1:nrow(var.mat)
-  mn.exp <- modmat %*% batch.mean
-  vr.exp <- modmat %*% as.matrix(var.mat)
-  stnd <- (biovals - mn.exp) / vr.exp
-  print(stnd)
-  gamma.exp <- modmat %*% as.matrix(gamma)
-  delta.exp <- sqrt(modmat %*% as.matrix(delta))
-  stnd <- (stnd - gamma.exp) / delta.exp
-  stnd <- (stnd * vr.exp) + mn.exp 
-  
+  all.models <- list()
+  all.data   <- list()
+  for(i in 1:length(pair.list)) {
+    dfname    <- names(pair.list[i])
+    clnames   <- c()
+    mod.list   <- list()
+    dat <- as.data.frame(pair.list[[i]])
+    newdata <- as.data.frame(split.batch[[batch.names[i]]])
+    pred.frame <- data.frame(matrix(nrow = nrow(newdata)))
+    for(j in 1:length(feats)) {
+      feat <- feats[j]
+      clnames <- append(clnames, feat)
+      outcome.name      <- paste(feat, ref.cohort, sep = "_")
+      pred.name         <- paste(feat, batch.names[i], sep = "_")
+      gamdf <- data.frame("outcome" = dat[[outcome.name]],
+                           "pred" = dat[[pred.name]])
+      gam.mod      <- gam(outcome ~ s(pred, k = k.val.nlt), data = gamdf)
+      pred.data    <- data.frame(newdata[feat])
+      colnames(pred.data) <- c("pred")
+      pred.feat    <- predict.gam(gam.mod, newdata = pred.data, type = "response")
+      pred.frame   <- cbind(pred.frame, pred.feat)
+      mod.list[[feat]] <- gam.mod
+    }
+    pred.frame[,1] <- NULL
+    colnames(pred.frame) <- clnames
+    list.name <- paste(ref.cohort, batch.names[i], sep = " ~ ")
+    all.data[[dfname]] <- pred.frame
+    all.models[[list.name]] <- mod.list
+  }
+  refco <- split.batch[[ref.cohort]]
+  refco$batch.var <-NULL
+  t.std.var$batch.var <-NULL
+  t.std.mean$batch.var <-NULL
+  all.data[[ref.cohort]] <- refco
+  batch.order <- as.character(unique(covar.data[["STUDY"]]))
+  all.data <- all.data[match(batch.order, names(all.data))]
+  fulldata <- do.call(rbind, all.data)
+  fulldata <- (fulldata * t.std.var) + t.std.mean
+  return(fulldata)
 }
 
-ApplyHarm2 <- function(long.im, long.cov, site.params, model.list) {
+
+
+
+
+
+
+################################################################################################    #####################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ApplyHarm <- function(long.im, long.cov, site.params, model.list) {
   datadict <- BuildDict(long.cov)
   stan.long <- StanAcrossFeatures(dat = long.im,
                                   covdata = long.cov,
@@ -387,6 +456,8 @@ ApplyHarm2 <- function(long.im, long.cov, site.params, model.list) {
 
 
 ################################################################################################    #####################################################################################################
+
+
 
 LongSelect <- function(cs, fulldata, id = "RID") {
   cs.id <- as.list(cs[[id]])

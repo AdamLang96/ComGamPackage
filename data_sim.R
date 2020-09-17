@@ -19,7 +19,9 @@ csf.harm  <- ComGamHarm(feature.data = csf.feat,
 rownames(csf.cov) <- 1:nrow(csf.cov)
 rownames(csf.feat) <- 1:nrow(csf.feat)
 adni1rows <- which(csf.cov$STUDY=="ADNI1" , arr.ind = TRUE)
-
+finaldf <- as.data.frame(t(csf.harm$harm.results))
+finaldf <- cbind(finaldf, csf.cov)
+ggplot(subset(finaldf, STUDY=="ADNI1"), aes(x=AGE, y=PTAU)) + geom_point(colour="green") + geom_smooth(method="lm") + labs(title="regular-harm") +ylim(0,90)
 
 data.std     <- as.data.frame(t(csf.harm$stan.dict$std.data))[adni1rows,]
 std.mean     <- as.data.frame(t(csf.harm$stan.dict$stand.mean))[adni1rows,]
@@ -153,6 +155,12 @@ View(t(sim.harm$stan.dict$var.pooled))
 std.mn   <-t(sim.harm$stan.dict$stand.mean)[,1]
 std.var <- t(sim.harm$stan.dict$var.pooled)[,1]
 
+df1 <-data.frame("a"=rep(2, 5),
+                 "b" = rep(3,5))
+
+df2<-df1
+df1*df2
+
 nl.adj.df$value <- nl.adj.df$value * std.var
 nl.adj.df$value <- nl.adj.df$value + std.mn
 
@@ -162,3 +170,21 @@ ggplot(nl.adj.df, aes(x=AGE, y=value, colour=variable)) + geom_point() + geom_sm
 ## looks good ##
 summary(gam(data = nl.adj.df, formula = value ~ s(AGE, k=4) + ApoEInd + GENDER + variable, method = "REML"))
 
+
+try1 <- NLAdjustment(covar.data = sim.cov,
+                   stan.dict = sim.harm$stan.dict,
+                   ref.cohort = "site-b",
+                   k.val.nlt = 4)
+
+try2 <- NLAdjustment(covar.data = csf.cov,
+                     stan.dict = csf.harm$stan.dict,
+                     ref.cohort = "ADNI1",
+                     k.val.nlt = 4)
+matchvec<-c("ADNI1", "ADNI2", "ADNI3", "ADNIGO", "PPMI", "2289", "6499", "354")
+
+try1 <- try1[match(matchvec, names(try1))]
+rm(try1)
+
+
+look<-cbind(try1, sim.cov)
+ggplot(look, aes(x=AGE, y=ptau, colour=STUDY)) + geom_point() + labs(title="nl-harm") + labs(title="site-b ref") + ylim(0, 120)
