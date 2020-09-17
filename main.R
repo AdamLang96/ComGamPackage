@@ -1,6 +1,6 @@
 ## still needs EB option
 ## could include nonlinear adjustment option
-#trychnage
+
 ComGamHarm <- function(feature.data, 
                        covar.data, 
                        training.indicies = NULL,
@@ -10,25 +10,32 @@ ComGamHarm <- function(feature.data,
                        model.diagnostics = FALSE) {
   
   ### check object types and parameters ###
+  #include check for STUDY variable and include class check for factor
   if(!is.data.frame(feature.data)) {
     stop('ComGamHarm: feature.data is not of type "data.frame"')
   }
   if(!is.data.frame(covar.data)) {
     stop('ComGamHarm: covar.data is not of type "data.frame"')
   }
+  if(!("STUDY" %in% colnames(covar.data))) {
+    stop('ComGamHarm: covar.data must include column "STUDY"')
+  }
+  if(!is.factor(covar.data[["STUDY"]])) {
+    stop('ComGamHarm: "STUDY" column must be of class "factor"')
+  }
   if(any(is.na(feature.data)) | any(is.na(covar.data))) {
     stop('ComGamHarm: data frames cannot contain missing data')
   }
-  
   if(!(nrow(feature.data) == nrow(covar.data))) {
     stop('ComGamHarm: # of rows inconsistent between data frames')
   }
   if(!is.null(smooth.terms) | !is.null(k.val)) {
     if(!(!is.null(smooth.terms) & !is.null(k.val))) {
       stop('ComGamHarm: both smooth.terms & k.val must be supplied if one is supplied')
-    }
+     }
     if(!(length(smooth.terms == length(k.val)))) {
       stop('ComGamHarm: smooth.terms & k.val must be vectors of same length')
+     
     }
   }
   data.dict        <-  BuildDict(covar.data =  covar.data)
