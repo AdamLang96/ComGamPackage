@@ -29,8 +29,6 @@ delta.effect <- csf.harm$shift.scale.params$delta.hat
 
 
 #simulate covariates based on distribution from data set
-length(which(csf.cov$GENDER==1)) / 2033
-
 sim.age  <- round(rnorm(n=1000, mean = 72, sd=9))
 sim.apoe <- sample(x = c(0,1,2),
                    size = 1000,
@@ -44,7 +42,6 @@ sim.gender <- sample(x=c(1,2),
 
 sim.gender <-as.factor(sim.gender)
 
-newapo<- rep(0, 1000)
 sim.study <- rep("ADNI1", 1000)
 
 sim.dframe <- data.frame("AGE" = sim.age,
@@ -68,28 +65,100 @@ sim.dframe$ptau  <- sim.ptau
 sim.dframe$tau   <- sim.tau 
 
 site.b.abeta <- c(rnorm(n=250, mean = 100, sd=100), rnorm(n=250, mean = 250, sd=100), rnorm(n=250, mean = 350, sd=100), rnorm(n=250, mean = 450, sd=100))
-site.b.ptau <- c(rnorm(n=250, mean = 5, sd=10), rnorm(n=250, mean = 10, sd=10), rnorm(n=250, mean = 25, sd=20), rnorm(n=250, mean = 35, sd=20))
-site.b.tau <- c(rnorm(n=250, mean = 50, sd=20), rnorm(n=250, mean = 100, sd=30), rnorm(n=250, mean = 150, sd=40), rnorm(n=250, mean = 200, sd=50))
+site.b.ptau  <- c(rnorm(n=250, mean = 5, sd=10), rnorm(n=250, mean = 10, sd=10), rnorm(n=250, mean = 25, sd=20), rnorm(n=250, mean = 35, sd=20))
+site.b.tau   <- c(rnorm(n=250, mean = 50, sd=20), rnorm(n=250, mean = 100, sd=30), rnorm(n=250, mean = 150, sd=40), rnorm(n=250, mean = 200, sd=50))
 
-sim.dframe.a <- sim.dframe.b <- sim.dframe[order(sim.dframe$abeta), ]
+sim.dframe.a       <- sim.dframe.b <- sim.dframe[order(sim.dframe$abeta), ]
 sim.dframe.b$order <- c(1:1000)
 sim.dframe.b$abeta <- sim.dframe.b$abeta + site.b.abeta
 
-sim.dframe.b <- sim.dframe.b[order(sim.dframe.b$ptau), ]
+sim.dframe.b      <- sim.dframe.b[order(sim.dframe.b$ptau), ]
 sim.dframe.b$ptau <- sim.dframe.b$ptau + site.b.ptau
 
-sim.dframe.b <- sim.dframe.b[order(sim.dframe.b$tau), ]
+sim.dframe.b     <- sim.dframe.b[order(sim.dframe.b$tau), ]
 sim.dframe.b$tau <- sim.dframe.b$tau + site.b.tau
 
-sim.dframe.b <- sim.dframe.b[order(sim.dframe.b$order),]
+sim.dframe.b       <- sim.dframe.b[order(sim.dframe.b$order),]
 sim.dframe.b$order <- NULL
 
-sim.dframe.a$site <- rep("site-a", 1000)
+sim.dframe.a$site  <- rep("site-a", 1000)
 sim.dframe.a$abeta <- sim.dframe.a$abeta + abeta.add
-sim.dframe.a$ptau <- sim.dframe.a$ptau + ptau.add
-sim.dframe.a$tau <- sim.dframe.a$tau + tau.add
+sim.dframe.a$ptau  <- sim.dframe.a$ptau + ptau.add
+sim.dframe.a$tau   <- sim.dframe.a$tau + tau.add
 
 sim.dframe.b$site <- rep("site-b", 1000)
-testframe <- rbind(sim.dframe.a, sim.dframe.b)
+full.sim <- rbind(sim.dframe.a, sim.dframe.b)
+full.sim$STUDY <-NULL
+full.sim$STUDY <- full.sim$site
+full.sim$site  <- NULL
 
+#significant site variance#
+check.var <- gam(ptau ~  s(AGE, k=4) + ApoEInd + GENDER + STUDY, data=full.sim, method = "REML")
+check.var <- gam(ptau ~  s(AGE, k=4) + ApoEInd + GENDER , data=full.sim, method = "REML")
+round(runif(250, min = 0, max = 2000))
+
+####### see how well it improves on standard harmonization
+sim.feat <- full.sim[, c("ptau", "tau")]
+sim.cov  <- full.sim[, c("AGE", "ApoEInd", "GENDER", "STUDY")]
+sim.cov$STUDY <- as.factor(sim.cov$STUDY)
+sim.harm <- ComGamHarm(feature.data = sim.feat,
+                       covar.data = sim.cov,
+                       training.indicies = round(runif(250, min = 0, max = 2000)),
+                       smooth.terms = c("AGE"),
+                       k.val = c(4),
+                       model.diagnostics = TRUE,
+                       verbose = TRUE)
+
+feat.harm <- as.data.frame(t(sim.harm$harm.results))
+feat.harm <- cbind(feat.harm, sim.cov)
+
+
+ggplot(full.sim, aes(x=AGE, y=ptau, colour=STUDY)) + geom_point() + geom_smooth(method = "gam", formula = y~s(x, k=4)) + labs(title = "preharm ptau") + ylim(0,100)
+ggplot(full.sim, aes(x=AGE, y=tau, colour=STUDY)) + geom_point() + geom_smooth(method = "gam", formula = y~s(x, k=4))  + labs(title = "preharm tau")
+
+ggplot(feat.harm, aes(x=AGE, y=ptau, colour=STUDY)) + geom_point() + geom_smooth(method = "gam", formula = y~s(x, k=4))  + labs(title = "postharm ptau") + ylim(0, 100)
+ggplot(feat.harm, aes(x=AGE, y=tau, colour=STUDY)) + geom_point() + geom_smooth(method = "gam", formula = y~s(x, k=4))  + labs(title = "postharm tau")
+
+summary(gam(ptau ~  s(AGE, k=4) + ApoEInd + GENDER + STUDY, data = feat.harm, method = "REML"))
+summary(gam(ptau ~  s(AGE, k=4) + ApoEInd + GENDER , data  = feat.harm, method = "REML"))
+
+view.std <- as.data.frame(t(sim.harm$stan.dict$std.data))
+view.std <- cbind(view.std, sim.cov)
+
+
+
+ggplot(view.std, aes(x=AGE, y=ptau, colour=STUDY)) + geom_point() +geom_smooth(method = "lm")
+
+
+## manually run nl adj ##
+split.std <- split(view.std, view.std$STUDY)
+std.adj.df <- data.frame("ptau.site.a" = split.std$`site-a`$ptau,
+                         "tau.site.a" = split.std$`site-a`$tau,
+                         "ptau.site.b" = split.std$`site-b`$ptau,
+                         "tau.site.b" = split.std$`site-b`$tau)
+
+nl.adj.gam <- gam(ptau.site.a ~ s(ptau.site.b, k=4), data = std.adj.df)
+summary(nl.adj.gam)
+
+site.a.compare <- predict.gam(nl.adj.gam, type = "response")
+
+nl.adj.df <- data.frame("ptau.site.a" = std.adj.df$ptau.site.a,
+                        "ptau.b.mapped" = site.a.compare)
+nl.adj.df <- melt(nl.adj.df, measure.vars = c("ptau.site.a", "ptau.b.mapped"))
+nl.adj.df <- cbind(nl.adj.df, sim.cov)
+
+ggplot(nl.adj.df, aes(x=AGE, y=value, colour=variable)) + geom_point()
+View(t(sim.harm$stan.dict$var.pooled))
+
+std.mn   <-t(sim.harm$stan.dict$stand.mean)[,1]
+std.var <- t(sim.harm$stan.dict$var.pooled)[,1]
+
+nl.adj.df$value <- nl.adj.df$value * std.var
+nl.adj.df$value <- nl.adj.df$value + std.mn
+
+nl.adj.df <- cbind(nl.adj.df, sim.cov)
+ggplot(nl.adj.df, aes(x=AGE, y=value, colour=variable)) + geom_point() + geom_smooth(method = "gam", formula = y~s(x, k=4)) + labs(title = "postharm ptau nl adjusted") + ylim(0, 100)
+
+## looks good ##
+summary(gam(data = nl.adj.df, formula = value ~ s(AGE, k=4) + ApoEInd + GENDER + variable, method = "REML"))
 
