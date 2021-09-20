@@ -1,6 +1,6 @@
 # ComGamPackage
 
-An Adaptation of [neuroHarmonize](https://github.com/rpomponio/neuroHarmonize)
+An adaptation of [neuroCombat_Rpackage](https://github.com/Jfortin1/neuroCombat_Rpackage)
 
 
 If you are using this package please cite the follwing papers:
