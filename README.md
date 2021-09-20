@@ -1,6 +1,6 @@
 # ComGamPackage
 
-An Adaptation of (neuroHarmonize) [https://github.com/rpomponio/neuroHarmonize]
+An Adaptation of [neuroHarmonize](https://github.com/rpomponio/neuroHarmonize)
 
 
 If you are using this package please cite the follwing papers:
