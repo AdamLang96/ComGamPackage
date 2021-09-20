@@ -1,6 +1,6 @@
 # ComGamPackage
 
-An adaptation of [ComBatHarmonization](https://github.com/Jfortin1/ComBatHarmonization)
+An adaptation of [ComBatHarmonization](https://github.com/Jfortin1/ComBatHarmonization) and [neuroHarmonize](https://github.com/rpomponio/neuroHarmonize)
 
 
 If you are using this package please cite the follwing papers:
