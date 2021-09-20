@@ -1,4 +1,3 @@
-## still needs EB option
 ## could include nonlinear adjustment option
 
 ComGamHarm <- function(feature.data, 
@@ -7,7 +6,10 @@ ComGamHarm <- function(feature.data,
                        smooth.terms = NULL,
                        k.val = NULL,
                        verbose = TRUE,
-                       model.diagnostics = FALSE) {
+                       model.diagnostics = FALSE,
+                       nl.adjustment = FALSE,
+                       nl.k.val = NULL,
+                       ref.cohort = NULL) {
   
   ### check object types and parameters ###
   #include check for STUDY variable and include class check for factor
@@ -54,6 +56,32 @@ ComGamHarm <- function(feature.data,
                                           covar.data   = covar.data,
                                           models.list  = models.list,
                                           data.dict    = data.dict)
+  if(nl.adjustment) {
+    nl.harm <- NLAdjustment(covar.data = covar.data,
+                            stan.dict = stan.dict,
+                            ref.cohort = ref.cohort,
+                            k.val.nlt = nl.k.val)
+    
+    if(model.diagnostics) {
+      
+      mod.diags <- ModelDiagnostics(mod.list = models.list)
+      
+      return.list <- list("harm.results"       = t(nl.harm),
+                          "stan.dict"          = stan.dict,
+                          "models.list"        = models.list,
+                          "model.formula"      = model.formula,
+                          "data.dict"          = data.dict,
+                          "model.diagnostics"  = mod.diags)
+    } else {
+      
+      return.list <- list("harm.results"       = t(nl.harm),
+                          "stan.dict"          = stan.dict,
+                          "models.list"        = models.list,
+                          "model.formula"      = model.formula,
+                          "data.dict"          = data.dict)
+    }
+    return(return.list)
+  }
   
   features.adj     <-  CalcGammaDelta(stan.dict =  stan.dict,
                                       data.dict = data.dict)
@@ -61,7 +89,6 @@ ComGamHarm <- function(feature.data,
   features.results <-  ApplyGammaDelta(stan.dict   = stan.dict,
                                        site.params = features.adj,
                                        data.dict   = data.dict)
-  
   if(model.diagnostics) {
     
     mod.diags <- ModelDiagnostics(mod.list = models.list)
@@ -82,7 +109,6 @@ ComGamHarm <- function(feature.data,
                         "model.formula"      = model.formula,
                         "data.dict"          = data.dict)
   }
-  
   return(return.list)
 }
 
