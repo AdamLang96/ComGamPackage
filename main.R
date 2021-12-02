@@ -56,35 +56,38 @@ ComGamHarm <- function(feature.data,
                                           covar.data   = covar.data,
                                           models.list  = models.list,
                                           data.dict    = data.dict)
-  if(nl.adjustment) {
-    nl.harm <- NLAdjustment(covar.data = covar.data,
-                            stan.dict = stan.dict,
-                            ref.cohort = ref.cohort,
-                            k.val.nlt = nl.k.val)
+  #if(nl.adjustment) {
+  #  nl.harm <- NLAdjustment(covar.data = covar.data,
+   #                         stan.dict = stan.dict,
+  #                          ref.cohort = ref.cohort,
+  #                          k.val.nlt = nl.k.val)
     
-    if(model.diagnostics) {
+  #  if(model.diagnostics) {
       
-      mod.diags <- ModelDiagnostics(mod.list = models.list)
+  #    mod.diags <- ModelDiagnostics(mod.list = models.list)
       
-      return.list <- list("harm.results"       = t(nl.harm),
-                          "stan.dict"          = stan.dict,
-                          "models.list"        = models.list,
-                          "model.formula"      = model.formula,
-                          "data.dict"          = data.dict,
-                          "model.diagnostics"  = mod.diags)
-    } else {
-      
-      return.list <- list("harm.results"       = t(nl.harm),
-                          "stan.dict"          = stan.dict,
-                          "models.list"        = models.list,
-                          "model.formula"      = model.formula,
-                          "data.dict"          = data.dict)
-    }
-    return(return.list)
-  }
+  #    return.list <- list("harm.results"       = t(nl.harm),
+  #                        "stan.dict"          = stan.dict,
+  #                        "models.list"        = models.list,
+  #                        "model.formula"      = model.formula,
+  #                        "data.dict"          = data.dict,
+  #                        "model.diagnostics"  = mod.diags)
+  #  } else {
+  #    
+  #    return.list <- list("harm.results"       = t(nl.harm),
+  #                        "stan.dict"          = stan.dict,
+  #                        "models.list"        = models.list,
+  #                        "model.formula"      = model.formula,
+  #                        "data.dict"          = data.dict)
+  #  }
+  #  return(return.list)
+  #}
   
   features.adj     <-  CalcGammaDelta(stan.dict =  stan.dict,
                                       data.dict = data.dict)
+  
+  
+
   
   features.results <-  ApplyGammaDelta(stan.dict   = stan.dict,
                                        site.params = features.adj,
