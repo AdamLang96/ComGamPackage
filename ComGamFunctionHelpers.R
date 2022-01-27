@@ -599,18 +599,23 @@ getEbEstimators <- function(naiveEstimators,
   return(out)
 }
 
-ApplyHarm <- function(long.im, long.cov, std.data, site.params, models.list) {
-  datadict    <- BuildDict(long.cov)
-  batches     <- datadict[["batches"]]
-  n.batches   <- datadict[["n.batches"]]
-  n.batch      <- datadict[["n.batch"]]
-  n.array      <- datadict[["n.array"]]
-  grand.mean  <- std.data[["grand.mean"]]
-  var.pooled1 <- std.data[["var.pooled1"]]
-  feature.data       <- t(long.im)
+
+
+ApplyHarm <- function(feature.data, covariate.data, comgam.out) {
+  std.data           <- comgam.out$stan.dict
+  site.params        <- comgam.out$shift.scale.params
+  models.list        <- comgam.out$models.list
+  datadict           <- BuildDict(covariate.data)
+  batches            <- datadict[["batches"]]
+  n.batches          <- datadict[["n.batches"]]
+  n.batch            <- datadict[["n.batch"]]
+  n.array            <- datadict[["n.array"]]
+  grand.mean         <- std.data[["grand.mean"]]
+  var.pooled1        <- std.data[["var.pooled1"]]
+  feature.data       <- t(feature.data)
   design             <- predict.gam(models.list[[1]], 
                                     type = "lpmatrix", 
-                                    newdata = long.cov)
+                                    newdata = covariate.data)
   
   mod.names  <- names(models.list)
   stand.mean <- crossprod(grand.mean, t(rep(1, n.array)))

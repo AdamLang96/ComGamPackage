@@ -1,6 +1,6 @@
 ComGamHarm <- function(feature.data, 
                        covar.data, 
-                       eb                = TRUE,
+                       eb                = FALSE,
                        parametric        = TRUE,
                        smooth.terms      = NULL,
                        k.val             = NULL,
