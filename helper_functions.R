@@ -8,6 +8,7 @@ library(matrixStats)
 library(ebbr)
 library(BiocParallel)
 library(furniture)
+
 ################################################################################################    #####################################################################################################
 FindIndices <- function(data, trainvar, trainlevel) {
   #
@@ -48,7 +49,7 @@ BuildDict <- function(covar.data, ref.batch=NULL) {
   
   batches <- lapply(levels(covar.data[["STUDY"]]), 
                     function(x)which(covar.data[["STUDY"]] == x))
-
+  
   dict[["batches"]]     <- batches 
   dict[["n.batch"]]     <- nlevels(covar.data[["STUDY"]])
   dict[["n.array"]]     <- nrow(covar.data)
@@ -56,7 +57,7 @@ BuildDict <- function(covar.data, ref.batch=NULL) {
   return(dict)
 }
 
- ################################################################################################    #####################################################################################################
+################################################################################################    #####################################################################################################
 
 BuildFormula <- function(covar.data, smooth.terms = NULL, k.val = NULL) {
   #
@@ -132,7 +133,7 @@ FitModel <- function(feature.data, covar.data, model.formula, verbose = FALSE) {
     modlist[[j]]        <- gammod
   }
   names(modlist)        <- imcols
-
+  
   return(modlist)
 }
 
@@ -312,8 +313,8 @@ CalcGammaDelta <- function(stan.dict, data.dict) {
   std.data  <- stan.dict[["std.data"]]
   mod.names <- stan.dict[["mod.names"]]
   batch.mod <- design[, 1:n.batch]
-
-    ## shift (mean)
+  
+  ## shift (mean)
   gamma.hat <- tcrossprod(solve(crossprod(batch.mod, batch.mod)), batch.mod)
   gamma.hat <- tcrossprod(gamma.hat, std.data)
   
@@ -446,13 +447,13 @@ NLAdjustment  <- function(covar.data, stan.dict, ref.cohort, k.val.nlt) {
     } else {
       ref.df.red   <- ref.df.red[1:nrow(batch.df.red),]  
     }
-     batch.df.red[["batch.var"]] <- NULL
-     ref.df.red[["batch.var"]]   <- NULL
-     colnames(batch.df.red) <- paste(colnames(batch.df.red), batch.names[i], sep="_")
-     colnames(ref.df.red)   <- paste(colnames(ref.df.red), ref.cohort, sep="_")
-     full.map.df            <- cbind(ref.df.red, batch.df.red)
-     pair.list[[element.name]] <- full.map.df
-     
+    batch.df.red[["batch.var"]] <- NULL
+    ref.df.red[["batch.var"]]   <- NULL
+    colnames(batch.df.red) <- paste(colnames(batch.df.red), batch.names[i], sep="_")
+    colnames(ref.df.red)   <- paste(colnames(ref.df.red), ref.cohort, sep="_")
+    full.map.df            <- cbind(ref.df.red, batch.df.red)
+    pair.list[[element.name]] <- full.map.df
+    
   }
   all.models <- list()
   all.data   <- list()
@@ -469,7 +470,7 @@ NLAdjustment  <- function(covar.data, stan.dict, ref.cohort, k.val.nlt) {
       outcome.name      <- paste(feat, ref.cohort, sep = "_")
       pred.name         <- paste(feat, batch.names[i], sep = "_")
       gamdf <- data.frame("outcome" = dat[[outcome.name]],
-                           "pred" = dat[[pred.name]])
+                          "pred" = dat[[pred.name]])
       gam.mod      <- gam(outcome ~ s(pred, k = k.val.nlt), data = gamdf)
       pred.data    <- data.frame(newdata[feat])
       colnames(pred.data) <- c("pred")
@@ -586,7 +587,7 @@ getEbEstimators <- function(naiveEstimators,
 
 
 
- ################################################################################################    #####################################################################################################
+################################################################################################    #####################################################################################################
 
 ################################################################################################    #####################################################################################################
 
@@ -605,9 +606,9 @@ LongSelect <- function(cs, fulldata, id = "RID") {
 }
 
 aprior <- function(delta.hat){
-m=mean(delta.hat)
-s2=var(delta.hat)
-return((2*s2+m^2)/s2)
+  m=mean(delta.hat)
+  s2=var(delta.hat)
+  return((2*s2+m^2)/s2)
 }
 
 bprior <- function(delta.hat){
