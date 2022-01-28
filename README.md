@@ -8,20 +8,21 @@ Adam Lang
     -   [Arguments](#arguments)
 -   [Example](#example)
     -   [Cross-Sectional Data](#cross-sectional-data)
+    -   [Harmonize](#harmonize)
+-   [Applying Harmonization To New
+    Data](#applying-harmonization-to-new-data)
+    -   [Example](#example-1)
+-   [Plots](#plots)
     -   [Plots Before Harmonization](#plots-before-harmonization)
         -   [ROI1](#roi1)
         -   [ROI2](#roi2)
         -   [ROI3](#roi3)
         -   [ROI4](#roi4)
-    -   [Harmonize](#harmonize)
     -   [Plots After Harmonization](#plots-after-harmonization)
         -   [ROI1](#roi1-1)
         -   [ROI2](#roi2-1)
         -   [ROI3](#roi3-1)
         -   [ROI4](#roi4-1)
--   [Applying Harmonization To New
-    Data](#applying-harmonization-to-new-data)
-    -   [Example](#example-1)
 
 Overview
 ========
@@ -150,25 +151,6 @@ knitr::kable(full.simulated.data.cs[c(1:5, 301:306, 601:606),])
 | 4852.780 | 1208.9107 | 33630.76 | 11994.121 | 75.64644 | 2   | 1    |  17.58859 | C     | 605 |
 | 3818.349 |  893.1338 | 31108.71 | 10500.881 | 83.57532 | 1   | 1    |  11.39115 | C     | 606 |
 
-Plots Before Harmonization
---------------------------
-
-### ROI1
-
-[![roi1unharmed.png](https://i.postimg.cc/6qS9FB3G/roi1unharmed.png)](https://postimg.cc/fScn9nYw)
-
-### ROI2
-
-[![roi2unharmed.png](https://i.postimg.cc/q7Lp4sqr/roi2unharmed.png)](https://postimg.cc/kVB0ytWY)
-
-### ROI3
-
-[![roi3unharmed.png](https://i.postimg.cc/YqWkhK0b/roi3unharmed.png)](https://postimg.cc/CzS9Q2jq)
-
-### ROI4
-
-[![roi4unharmed.png](https://i.postimg.cc/L6LXGZt9/roi4unharmed.png)](https://postimg.cc/vc8bVT2k)
-
 Harmonize
 ---------
 
@@ -206,25 +188,6 @@ data
 harm.data <- cbind(harmonized.features, covariate.data)
 ```
 
-Plots After Harmonization
--------------------------
-
-### ROI1
-
-[![roi1harmed.png](https://i.postimg.cc/SQWbhLvv/roi1harmed.png)](https://postimg.cc/145j0FPG)
-
-### ROI2
-
-[![roi2harmed.png](https://i.postimg.cc/15sh5nx5/roi2harmed.png)](https://postimg.cc/DmjYxzyt)
-
-### ROI3
-
-[![roi3harmed.png](https://i.postimg.cc/xCMh9Ytz/roi3harmed.png)](https://postimg.cc/626Y0ssW)
-
-### ROI4
-
-[![roi4harmed.png](https://i.postimg.cc/m28qLmN8/roi4harmed.png)](https://postimg.cc/9rw11tk7)
-
 Applying Harmonization To New Data
 ==================================
 
@@ -258,3 +221,44 @@ harm.longitudinal <- as.data.frame(t(harm.longitudinal))
 
 harm.longitudinal <- cbind(harm.longitudinal, covariate.data.long)
 ```
+
+Plots
+=====
+
+Plots Before Harmonization
+--------------------------
+
+### ROI1
+
+[![roi1unharmed.png](https://i.postimg.cc/6qS9FB3G/roi1unharmed.png)](https://postimg.cc/fScn9nYw)
+
+### ROI2
+
+[![roi2unharmed.png](https://i.postimg.cc/q7Lp4sqr/roi2unharmed.png)](https://postimg.cc/kVB0ytWY)
+
+### ROI3
+
+[![roi3unharmed.png](https://i.postimg.cc/YqWkhK0b/roi3unharmed.png)](https://postimg.cc/CzS9Q2jq)
+
+### ROI4
+
+[![roi4unharmed.png](https://i.postimg.cc/L6LXGZt9/roi4unharmed.png)](https://postimg.cc/vc8bVT2k)
+
+Plots After Harmonization
+-------------------------
+
+### ROI1
+
+[![roi1harmed.png](https://i.postimg.cc/SQWbhLvv/roi1harmed.png)](https://postimg.cc/145j0FPG)
+
+### ROI2
+
+[![roi2harmed.png](https://i.postimg.cc/15sh5nx5/roi2harmed.png)](https://postimg.cc/DmjYxzyt)
+
+### ROI3
+
+[![roi3harmed.png](https://i.postimg.cc/xCMh9Ytz/roi3harmed.png)](https://postimg.cc/626Y0ssW)
+
+### ROI4
+
+[![roi4harmed.png](https://i.postimg.cc/m28qLmN8/roi4harmed.png)](https://postimg.cc/9rw11tk7)
