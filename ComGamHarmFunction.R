@@ -1,12 +1,10 @@
-## still needs EB option
-## could include nonlinear adjustment option
-
 ComGamHarm <- function(feature.data, 
                        covar.data, 
-                       training.indicies = NULL,
-                       smooth.terms = NULL,
-                       k.val = NULL,
-                       verbose = TRUE,
+                       eb                = FALSE,
+                       parametric        = TRUE,
+                       smooth.terms      = NULL,
+                       k.val             = NULL,
+                       verbose           = TRUE,
                        model.diagnostics = FALSE) {
   
   ### check object types and parameters ###
@@ -16,10 +14,15 @@ ComGamHarm <- function(feature.data,
   if(!is.data.frame(covar.data)) {
     stop('ComGamHarm: covar.data is not of type "data.frame"')
   }
+  if(!("STUDY" %in% colnames(covar.data))) {
+    stop('ComGamHarm: covar.data must include column "STUDY"')
+  }
+  if(!is.factor(covar.data[["STUDY"]])) {
+    stop('ComGamHarm: "STUDY" column must be of class "factor"')
+  }
   if(any(is.na(feature.data)) | any(is.na(covar.data))) {
     stop('ComGamHarm: data frames cannot contain missing data')
   }
-  
   if(!(nrow(feature.data) == nrow(covar.data))) {
     stop('ComGamHarm: # of rows inconsistent between data frames')
   }
@@ -29,6 +32,7 @@ ComGamHarm <- function(feature.data,
     }
     if(!(length(smooth.terms == length(k.val)))) {
       stop('ComGamHarm: smooth.terms & k.val must be vectors of same length')
+      
     }
   }
   data.dict        <-  BuildDict(covar.data =  covar.data)
@@ -40,7 +44,6 @@ ComGamHarm <- function(feature.data,
   models.list      <-  FitModel(feature.data     = feature.data,
                                 covar.data       = covar.data,
                                 model.formula    = model.formula,
-                                training.indices = training.indicies,
                                 verbose = verbose)
   
   stan.dict        <-  StanAcrossFeatures(feature.data = feature.data,
@@ -51,13 +54,42 @@ ComGamHarm <- function(feature.data,
   features.adj     <-  CalcGammaDelta(stan.dict =  stan.dict,
                                       data.dict = data.dict)
   
+  features.adj.untouched <- features.adj
+  
+  if(eb) {
+    gamma.hat <- as.matrix(features.adj$gamma.hat)
+    delta.hat <- as.matrix(features.adj$delta.hat)
+    
+    naiveest <- list("gamma.hat" = gamma.hat,
+                     "delta.hat" = delta.hat)
+    stddata   <- stan.dict$std.data
+    data.dict <- data.dict
+    data.dict[["ref.batch"]] <- NULL
+    EbEst <- getEbEstimators(naiveEstimators = naiveest,
+                             s.data = stddata,
+                             dataDict = data.dict,
+                             parametric = parametric)
+    
+    features.adj <- list("gamma.hat" = EbEst[["gamma.star"]],
+                         "delta.hat" = EbEst[["delta.star"]])
+    
+  }
+  
+  
+  
   features.results <-  ApplyGammaDelta(stan.dict   = stan.dict,
                                        site.params = features.adj,
                                        data.dict   = data.dict)
+  if(!eb) {
+    priors <- NULL
+  } else {
+    priors <- EbEst
+  }
   
   if(model.diagnostics) {
     
     mod.diags <- ModelDiagnostics(mod.list = models.list)
+    
     
     return.list <- list("harm.results"       = features.results,
                         "stan.dict"          = stan.dict,
@@ -65,7 +97,11 @@ ComGamHarm <- function(feature.data,
                         "models.list"        = models.list,
                         "model.formula"      = model.formula,
                         "data.dict"          = data.dict,
-                        "model.diagnostics"  = mod.diags)
+                        "model.diagnostics"  = mod.diags,
+                        "priors"             = priors,
+                        "priors_no_eb"       = features.adj.untouched,
+                        "feature_data"       = feature.data,
+                        "covs_data"          = covar.data)
   } else {
     
     return.list <- list("harm.results"       = features.results,
@@ -73,11 +109,11 @@ ComGamHarm <- function(feature.data,
                         "shift.scale.params" = features.adj,
                         "models.list"        = models.list,
                         "model.formula"      = model.formula,
-                        "data.dict"          = data.dict)
+                        "data.dict"          = data.dict,
+                        "priors"             = priors,
+                        "priors_no_eb"       = features.adj.untouched,
+                        "feature_data"       = feature.data,
+                        "covs_data"          = covar.data) 
   }
-  
   return(return.list)
 }
-
-
-
